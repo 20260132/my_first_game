@@ -25,19 +25,19 @@ GREEN   = (50,  220, 80)
 ORANGE  = (240, 140, 0)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Space Shooter")
+pygame.display.set_caption("Space Shooter - Enhanced Push Mode")
 clock = pygame.time.Clock()
-font = get_korean_font(36)
+font = get_korean_font(30)
 font_big = get_korean_font(72)
+font_small = get_korean_font(24)
 
 PLAYER_W, PLAYER_H = 40, 40
 ENEMY_W,  ENEMY_H  = 36, 36
 BULLET_W, BULLET_H = 6,  14
+ITEM_W,   ITEM_H   = 30, 30
 
-# 고정 스폰 속도
 SPAWN_RATE = 40
-# 적 수명 (60 FPS 기준 300 프레임 = 5초)
-ENEMY_LIFETIME = 300
+ENEMY_LIFETIME = 600 # 10초
 
 def draw_player(surf, rect):
     cx = rect.centerx
@@ -49,132 +49,158 @@ def draw_player(surf, rect):
     ])
     pygame.draw.rect(surf, YELLOW, (cx - 4, rect.bottom - 10, 8, 10))
 
-def draw_enemy(surf, rect):
-    cx = rect.centerx
-    pygame.draw.polygon(surf, RED, [
-        (cx, rect.bottom),
-        (rect.left, rect.top),
-        (cx, rect.top + 8),
-        (rect.right, rect.top),
+def draw_enemy(surf, rect, push_count):
+    # 핵심 수정 4: 투명도 지원을 위해 별도의 Surface 생성 (SRCALPHA 사용)
+    enemy_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+    
+    # 3번 맞으면 사라지므로, 한 번 맞을 때마다 투명도를 약 80씩 감소
+    # 0(완전 투명) ~ 255(완전 불투명)
+    alpha = max(40, 255 - (push_count * 80)) 
+    
+    # 맞은 횟수에 따른 색상 지정 (RGBA 사용)
+    color = (220, 50, 50, alpha) # 빨간색 + 투명도
+    if push_count == 1: color = (255, 140, 0, alpha) # 주황색 + 투명도
+    elif push_count == 2: color = (240, 220, 0, alpha) # 노란색 + 투명도
+    
+    cx = rect.width // 2
+    # enemy_surf 내부(좌표 0,0 기준)에 그리기
+    pygame.draw.polygon(enemy_surf, color, [
+        (cx, rect.height),
+        (0, 0),
+        (cx, 8),
+        (rect.width, 0),
     ])
+    
+    # 메인 화면의 적 위치에 투명도가 적용된 Surface를 출력
+    surf.blit(enemy_surf, (rect.x, rect.y))
 
 def spawn_enemy(existing_enemies, player_rect):
     for _ in range(50):
         x = random.randint(0, WIDTH - ENEMY_W)
-        # 상단 300 픽셀 이내에만 생성 (UI 영역 40은 제외)
         y = random.randint(40, 300 - ENEMY_H) 
         new_rect = pygame.Rect(x, y, ENEMY_W, ENEMY_H)
-        
-        # 1. 플레이어와 안전 거리 확보
-        if new_rect.colliderect(player_rect.inflate(100, 100)):
-            continue
-            
-        # 2. 기존 적들과 겹치는지 확인 (이제 딕셔너리로 관리되므로 ["rect"] 확인)
+        if new_rect.colliderect(player_rect.inflate(100, 100)): continue
         overlap = False
         for en in existing_enemies:
             if new_rect.colliderect(en["rect"]):
                 overlap = True
                 break
-                
-        # 겹치지 않으면 딕셔너리 형태로 정보 반환 (수명과 부드러운 이동을 위한 실수 Y좌표 포함)
         if not overlap:
-            return {"rect": new_rect, "float_y": float(y), "timer": 0}
-            
+            return {"rect": new_rect, "float_y": float(y), "timer": 0, "push_count": 0, "knockback": 0}
     return None
-
-def draw_stars(stars):
-    for s in stars:
-        pygame.draw.circle(screen, WHITE, (s[0], s[1]), s[2])
-
-def draw_hud(score, lives):
-    screen.blit(font.render(f"Score: {score}", True, WHITE), (10, 10))
-    screen.blit(font.render(f"Lives: {'♥ ' * lives}", True, RED), (WIDTH - 180, 10))
-
-def game_over_screen(score):
-    screen.fill((10, 10, 30))
-    screen.blit(font_big.render("GAME OVER", True, RED), (220, 220))
-    screen.blit(font.render(f"Score: {score}", True, WHITE), (350, 310))
-    screen.blit(font.render("R: Restart   Q: Quit", True, WHITE), (270, 360))
-    pygame.display.flip()
-    while True:
-        for e in pygame.event.get():
-            if e.type == pygame.QUIT:
-                pygame.quit(); sys.exit()
-            if e.type == pygame.KEYDOWN:
-                if e.key == pygame.K_r: return True
-                if e.key == pygame.K_q: pygame.quit(); sys.exit()
 
 def main():
     player = pygame.Rect(WIDTH // 2 - PLAYER_W // 2, HEIGHT - 70, PLAYER_W, PLAYER_H)
-    bullets  = []
-    enemies  = []  # 이제 Rect가 아닌 딕셔너리를 저장합니다.
-    score    = 0
-    lives    = 3
+    bullets = []
+    enemies = []
+    items = []
+    score = 0
+    lives = 3
     shoot_cd = 0
     spawn_timer = 0
     invincible = 0
+    
+    item_spawn_timer = 0
+    push_mode_timer = 0
+    score_popups = [] 
 
-    stars = [(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 2))
-             for _ in range(80)]
+    stars = [(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 2)) for _ in range(80)]
 
     while True:
         clock.tick(FPS)
+        screen.fill(GRAY)
 
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
 
         keys = pygame.key.get_pressed()
-        
-        if (keys[pygame.K_LEFT] or keys[pygame.K_a])  and player.left  > 0:      player.x -= 6
-        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player.right < WIDTH:  player.x += 6
-        if (keys[pygame.K_UP] or keys[pygame.K_w])    and player.top   > 0:      player.y -= 6
-        if (keys[pygame.K_DOWN] or keys[pygame.K_s])  and player.bottom < HEIGHT: player.y += 6
+        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and player.left > 0: player.x -= 6
+        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player.right < WIDTH: player.x += 6
+        if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.top > 0: player.y -= 6
+        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.bottom < HEIGHT: player.y += 6
+
+        # 핵심 수정 1: 아이템 등장 주기 20초(1200 프레임)로 변경
+        item_spawn_timer += 1
+        if item_spawn_timer >= 1200: 
+            item_spawn_timer = 0
+            ix = random.randint(50, WIDTH - 50)
+            iy = -ITEM_H
+            items.append({"rect": pygame.Rect(ix, iy, ITEM_W, ITEM_H), "float_y": float(iy)})
+
+        # 핵심 수정 2: 아이템 하강 속도 상향 (1.2 -> 2.5)
+        for it in items[:]:
+            it["float_y"] += 2.5
+            it["rect"].y = int(it["float_y"])
+            if player.colliderect(it["rect"]):
+                push_mode_timer = 420 
+                items.remove(it)
+            elif it["rect"].top > HEIGHT:
+                items.remove(it)
+
+        if push_mode_timer > 0: push_mode_timer -= 1
 
         shoot_cd -= 1
         if keys[pygame.K_SPACE] and shoot_cd <= 0:
-            b = pygame.Rect(player.centerx - BULLET_W // 2, player.top, BULLET_W, BULLET_H)
-            bullets.append(b)
+            b_type = "push" if push_mode_timer > 0 else "normal"
+            bullets.append({"rect": pygame.Rect(player.centerx - 3, player.top, 6, 14), "type": b_type})
             shoot_cd = 15
 
-        bullets = [b for b in bullets if b.bottom > 0]
-        for b in bullets:
-            b.y -= 10
+        for b in bullets[:]:
+            b["rect"].y -= 10
+            if b["rect"].bottom < 0: bullets.remove(b)
 
-        # 적 스폰
         spawn_timer += 1
         if spawn_timer >= SPAWN_RATE:
             spawn_timer = 0
-            new_enemy = spawn_enemy(enemies, player)
-            if new_enemy:
-                enemies.append(new_enemy)
+            new_en = spawn_enemy(enemies, player)
+            if new_en: enemies.append(new_en)
 
-        # 적 업데이트 로직 (아주 천천히 하강 + 5초 지나면 삭제)
-        alive_enemies = []
-        for en in enemies:
+        # 핵심 수정 3: 밀쳐지는 거리 및 속도 강화
+        for en in enemies[:]:
             en["timer"] += 1
-            if en["timer"] <= ENEMY_LIFETIME: # 5초가 안 지난 적만 유지
-                en["float_y"] += 0.3 # 매 프레임 0.3 픽셀씩 아주 천천히 하강
-                en["rect"].y = int(en["float_y"])
-                alive_enemies.append(en)
-        enemies = alive_enemies
+            if en["timer"] > ENEMY_LIFETIME:
+                enemies.remove(en)
+                continue
+            
+            if en["knockback"] > 0:
+                en["float_y"] -= 1.5 # 밀려나는 속도 강화 (기존 1.0)
+                en["knockback"] -= 1
+            else:
+                en["float_y"] += 0.3 
+            en["rect"].y = int(en["float_y"])
 
-        # 총알과 적 충돌 판정
-        hit_bullets = set()
-        hit_enemies = set()
-        for bi, b in enumerate(bullets):
-            for ei, en in enumerate(enemies):
-                expanded = en["rect"].inflate(6,6)
-                if b.colliderect(expanded):
-                    hit_bullets.add(bi)
-                    hit_enemies.add(ei)
-                    score += 10
-        bullets  = [b  for i, b  in enumerate(bullets)  if i not in hit_bullets]
-        enemies  = [en for i, en in enumerate(enemies)   if i not in hit_enemies]
+        # 충돌 판정 (총알 vs 적)
+        for b in bullets[:]:
+            for en in enemies[:]:
+                if b["rect"].colliderect(en["rect"]):
+                    if b in bullets: bullets.remove(b)
+                    if b["type"] == "normal":
+                        enemies.remove(en)
+                        score += 10
+                    else: 
+                        en["push_count"] += 1
+                        en["knockback"] = 25 # 밀려나는 프레임 강화 (기존 15)
+                        score += 10
+                        if en["push_count"] >= 3:
+                            enemies.remove(en)
+                    break
 
-        # 플레이어와 적 충돌 판정
-        if invincible > 0:
-            invincible -= 1
+        # 연쇄 충돌 판정
+        for i, en1 in enumerate(enemies):
+            if en1["knockback"] > 0:
+                for j, en2 in enumerate(enemies):
+                    if i != j and en1["rect"].colliderect(en2["rect"]) and en2["knockback"] == 0:
+                        en2["knockback"] = 25 # 연쇄 밀치기도 강화
+                        en2["push_count"] += 1
+                        score += 20 
+                        score_popups.append({"text": "+20", "x": en2["rect"].x, "y": en2["rect"].y, "life": 30})
+                        if en2["push_count"] >= 3:
+                            if en2 in enemies: enemies.remove(en2)
+                        break
+
+        # 플레이어 피격
+        if invincible > 0: invincible -= 1
         else:
             for en in enemies:
                 if player.colliderect(en["rect"]):
@@ -182,27 +208,47 @@ def main():
                     invincible = 90
                     enemies.clear()
                     if lives <= 0:
-                        if game_over_screen(score):
-                            main()
+                        if game_over_screen(score): main()
                         return
                     break
 
-        screen.fill(GRAY)
-        draw_stars(stars)
-
+        # 그리기
+        for s in stars: pygame.draw.circle(screen, WHITE, (s[0], s[1]), s[2])
+        for it in items:
+            pygame.draw.rect(screen, GREEN, it["rect"])
+            pygame.draw.rect(screen, WHITE, it["rect"].inflate(-12, -12))
         for b in bullets:
-            pygame.draw.rect(screen, YELLOW, b)
-
-        # 딕셔너리의 "rect" 값을 전달하여 그리기
+            pygame.draw.rect(screen, GREEN if b["type"]=="push" else YELLOW, b["rect"])
         for en in enemies:
-            draw_enemy(screen, en["rect"])
+            draw_enemy(screen, en["rect"], en["push_count"])
+        if (invincible // 10) % 2 == 0: draw_player(screen, player)
+        
+        # HUD
+        screen.blit(font.render(f"Score: {score}", True, WHITE), (10, 10))
+        screen.blit(font.render(f"Lives: {'♥ ' * lives}", True, RED), (WIDTH - 180, 10))
+        if push_mode_timer > 0:
+            msg = font.render(f"PUSH MODE: {push_mode_timer//60 + 1}s", True, GREEN)
+            screen.blit(msg, (WIDTH//2 - 70, 10))
+            
+        for p in score_popups[:]:
+            screen.blit(font_small.render(p["text"], True, YELLOW), (p["x"], p["y"]))
+            p["y"] -= 1; p["life"] -= 1
+            if p["life"] <= 0: score_popups.remove(p)
 
-        blink = (invincible // 10) % 2 == 0
-        if blink:
-            draw_player(screen, player)
-
-        draw_hud(score, lives)
         pygame.display.flip()
+
+def game_over_screen(score):
+    screen.fill((10, 10, 30))
+    screen.blit(font_big.render("GAME OVER", True, RED), (220, 220))
+    screen.blit(font.render(f"Final Score: {score}", True, WHITE), (330, 310))
+    screen.blit(font.render("Press R to Restart or Q to Quit", True, WHITE), (230, 370))
+    pygame.display.flip()
+    while True:
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_r: return True
+                if e.key == pygame.K_q: pygame.quit(); sys.exit()
 
 if __name__ == "__main__":
     main()
