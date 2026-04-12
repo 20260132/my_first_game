@@ -4,7 +4,6 @@ import sys
 
 pygame.init()
 
-
 def get_korean_font(size):
     candidates = ["malgungothic", "applegothic", "nanumgothic", "notosanscjk"]
     for name in candidates:
@@ -12,7 +11,6 @@ def get_korean_font(size):
         if font.get_ascent() > 0:
             return font
     return pygame.font.SysFont(None, size)
-
 
 WIDTH, HEIGHT = 800, 600
 FPS = 60
@@ -32,21 +30,14 @@ clock = pygame.time.Clock()
 font = get_korean_font(36)
 font_big = get_korean_font(72)
 
-# --- 레벨 설정 ---
-LEVELS = [
-    {"enemy_speed": 2, "spawn": 60, "label": "Lv.1"},
-    {"enemy_speed": 3, "spawn": 40, "label": "Lv.2"},
-    {"enemy_speed": 5, "spawn": 25, "label": "Lv.3"},
-]
-
-# --- 사운드 자리 ---
-# shoot_sound    = pygame.mixer.Sound("shoot.wav")
-# explosion_sound= pygame.mixer.Sound("explosion.wav")
-# hit_sound      = pygame.mixer.Sound("hit.wav")
-
 PLAYER_W, PLAYER_H = 40, 40
 ENEMY_W,  ENEMY_H  = 36, 36
 BULLET_W, BULLET_H = 6,  14
+
+# 고정 스폰 속도
+SPAWN_RATE = 40
+# 적 수명 (60 FPS 기준 300 프레임 = 5초)
+ENEMY_LIFETIME = 300
 
 def draw_player(surf, rect):
     cx = rect.centerx
@@ -67,18 +58,37 @@ def draw_enemy(surf, rect):
         (rect.right, rect.top),
     ])
 
-def spawn_enemy(level_cfg):
-    x = random.randint(0, WIDTH - ENEMY_W)
-    return pygame.Rect(x, -ENEMY_H, ENEMY_W, ENEMY_H)
+def spawn_enemy(existing_enemies, player_rect):
+    for _ in range(50):
+        x = random.randint(0, WIDTH - ENEMY_W)
+        # 상단 300 픽셀 이내에만 생성 (UI 영역 40은 제외)
+        y = random.randint(40, 300 - ENEMY_H) 
+        new_rect = pygame.Rect(x, y, ENEMY_W, ENEMY_H)
+        
+        # 1. 플레이어와 안전 거리 확보
+        if new_rect.colliderect(player_rect.inflate(100, 100)):
+            continue
+            
+        # 2. 기존 적들과 겹치는지 확인 (이제 딕셔너리로 관리되므로 ["rect"] 확인)
+        overlap = False
+        for en in existing_enemies:
+            if new_rect.colliderect(en["rect"]):
+                overlap = True
+                break
+                
+        # 겹치지 않으면 딕셔너리 형태로 정보 반환 (수명과 부드러운 이동을 위한 실수 Y좌표 포함)
+        if not overlap:
+            return {"rect": new_rect, "float_y": float(y), "timer": 0}
+            
+    return None
 
 def draw_stars(stars):
     for s in stars:
         pygame.draw.circle(screen, WHITE, (s[0], s[1]), s[2])
 
-def draw_hud(score, lives, level_cfg):
+def draw_hud(score, lives):
     screen.blit(font.render(f"Score: {score}", True, WHITE), (10, 10))
     screen.blit(font.render(f"Lives: {'♥ ' * lives}", True, RED), (WIDTH - 180, 10))
-    screen.blit(font.render(level_cfg["label"], True, YELLOW), (WIDTH // 2 - 25, 10))
 
 def game_over_screen(score):
     screen.fill((10, 10, 30))
@@ -97,13 +107,11 @@ def game_over_screen(score):
 def main():
     player = pygame.Rect(WIDTH // 2 - PLAYER_W // 2, HEIGHT - 70, PLAYER_W, PLAYER_H)
     bullets  = []
-    enemies  = []
+    enemies  = []  # 이제 Rect가 아닌 딕셔너리를 저장합니다.
     score    = 0
     lives    = 3
     shoot_cd = 0
     spawn_timer = 0
-    level_idx = 0
-    level_cfg = LEVELS[level_idx]
     invincible = 0
 
     stars = [(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 2))
@@ -117,14 +125,14 @@ def main():
                 pygame.quit(); sys.exit()
 
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]  and player.left  > 0:      player.x -= 6
-        if keys[pygame.K_RIGHT] and player.right < WIDTH:   player.x += 6
-        if keys[pygame.K_UP]    and player.top   > 0:      player.y -= 6
-        if keys[pygame.K_DOWN]  and player.bottom < HEIGHT: player.y += 6
+        
+        if (keys[pygame.K_LEFT] or keys[pygame.K_a])  and player.left  > 0:      player.x -= 6
+        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player.right < WIDTH:  player.x += 6
+        if (keys[pygame.K_UP] or keys[pygame.K_w])    and player.top   > 0:      player.y -= 6
+        if (keys[pygame.K_DOWN] or keys[pygame.K_s])  and player.bottom < HEIGHT: player.y += 6
 
         shoot_cd -= 1
         if keys[pygame.K_SPACE] and shoot_cd <= 0:
-            # shoot_sound.play()
             b = pygame.Rect(player.centerx - BULLET_W // 2, player.top, BULLET_W, BULLET_H)
             bullets.append(b)
             shoot_cd = 15
@@ -133,40 +141,43 @@ def main():
         for b in bullets:
             b.y -= 10
 
+        # 적 스폰
         spawn_timer += 1
-        if spawn_timer >= level_cfg["spawn"]:
+        if spawn_timer >= SPAWN_RATE:
             spawn_timer = 0
-            enemies.append(spawn_enemy(level_cfg))
+            new_enemy = spawn_enemy(enemies, player)
+            if new_enemy:
+                enemies.append(new_enemy)
 
+        # 적 업데이트 로직 (아주 천천히 하강 + 5초 지나면 삭제)
         alive_enemies = []
         for en in enemies:
-            en.y += level_cfg["enemy_speed"]
-            if en.top < HEIGHT:
+            en["timer"] += 1
+            if en["timer"] <= ENEMY_LIFETIME: # 5초가 안 지난 적만 유지
+                en["float_y"] += 0.3 # 매 프레임 0.3 픽셀씩 아주 천천히 하강
+                en["rect"].y = int(en["float_y"])
                 alive_enemies.append(en)
         enemies = alive_enemies
 
+        # 총알과 적 충돌 판정
         hit_bullets = set()
         hit_enemies = set()
         for bi, b in enumerate(bullets):
             for ei, en in enumerate(enemies):
-                expanded = en.inflate(6,6)
+                expanded = en["rect"].inflate(6,6)
                 if b.colliderect(expanded):
-                    # explosion_sound.play()
                     hit_bullets.add(bi)
                     hit_enemies.add(ei)
                     score += 10
         bullets  = [b  for i, b  in enumerate(bullets)  if i not in hit_bullets]
         enemies  = [en for i, en in enumerate(enemies)   if i not in hit_enemies]
 
-        level_idx = min(score // 50, len(LEVELS) - 1)
-        level_cfg = LEVELS[level_idx]
-
+        # 플레이어와 적 충돌 판정
         if invincible > 0:
             invincible -= 1
         else:
             for en in enemies:
-                if player.colliderect(en):
-                    # hit_sound.play()
+                if player.colliderect(en["rect"]):
                     lives -= 1
                     invincible = 90
                     enemies.clear()
@@ -176,23 +187,22 @@ def main():
                         return
                     break
 
-        for s in stars:
-            s = list(s)
-
         screen.fill(GRAY)
         draw_stars(stars)
 
         for b in bullets:
             pygame.draw.rect(screen, YELLOW, b)
 
+        # 딕셔너리의 "rect" 값을 전달하여 그리기
         for en in enemies:
-            draw_enemy(screen, en)
+            draw_enemy(screen, en["rect"])
 
         blink = (invincible // 10) % 2 == 0
         if blink:
             draw_player(screen, player)
 
-        draw_hud(score, lives, level_cfg)
+        draw_hud(score, lives)
         pygame.display.flip()
 
-main()
+if __name__ == "__main__":
+    main()
