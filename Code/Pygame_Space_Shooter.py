@@ -1,6 +1,7 @@
 import pygame
 import random
 import sys
+import os
 
 pygame.init()
 
@@ -36,48 +37,39 @@ ENEMY_W,  ENEMY_H  = 36, 36
 BULLET_W, BULLET_H = 6,  14
 ITEM_W,   ITEM_H   = 30, 30
 
-SPAWN_RATE = 40
+# 수정 1: 적 생성 주기를 5초(300프레임)로 변경
+SPAWN_RATE = 30 
 ENEMY_LIFETIME = 600 # 10초
 
-def draw_player(surf, rect):
-    cx = rect.centerx
-    pygame.draw.polygon(surf, BLUE, [
-        (cx, rect.top),
-        (rect.left, rect.bottom),
-        (cx, rect.bottom - 8),
-        (rect.right, rect.bottom),
-    ])
-    pygame.draw.rect(surf, YELLOW, (cx - 4, rect.bottom - 10, 8, 10))
+# --- 스프라이트 이미지 로드 및 크기 조절 ---
+try:
+    player_img = pygame.image.load(os.path.join("sprite", "Spaceship.png")).convert_alpha()
+    player_img = pygame.transform.scale(player_img, (PLAYER_W, PLAYER_H))
 
-def draw_enemy(surf, rect, push_count):
-    # 핵심 수정 4: 투명도 지원을 위해 별도의 Surface 생성 (SRCALPHA 사용)
-    enemy_surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-    
-    # 3번 맞으면 사라지므로, 한 번 맞을 때마다 투명도를 약 80씩 감소
-    # 0(완전 투명) ~ 255(완전 불투명)
+    enemy_img = pygame.image.load(os.path.join("sprite", "Enemy.png")).convert_alpha()
+    enemy_img = pygame.transform.scale(enemy_img, (ENEMY_W, ENEMY_H))
+
+    item_img = pygame.image.load(os.path.join("sprite", "Force_icon.png")).convert_alpha()
+    item_img = pygame.transform.scale(item_img, (ITEM_W, ITEM_H))
+except Exception as e:
+    print(f"스프라이트 로드 오류: {e}")
+    print("코드 파일과 같은 위치에 'sprite' 폴더를 만들고, Spaceship.png, Enemy.png, Force_icon.png를 넣어주세요.")
+    pygame.quit()
+    sys.exit()
+# ------------------------------------------
+
+def draw_enemy_sprite(surf, rect, push_count, base_image):
+    # 맞은 횟수에 따라 투명도 감소
     alpha = max(40, 255 - (push_count * 80)) 
-    
-    # 맞은 횟수에 따른 색상 지정 (RGBA 사용)
-    color = (220, 50, 50, alpha) # 빨간색 + 투명도
-    if push_count == 1: color = (255, 140, 0, alpha) # 주황색 + 투명도
-    elif push_count == 2: color = (240, 220, 0, alpha) # 노란색 + 투명도
-    
-    cx = rect.width // 2
-    # enemy_surf 내부(좌표 0,0 기준)에 그리기
-    pygame.draw.polygon(enemy_surf, color, [
-        (cx, rect.height),
-        (0, 0),
-        (cx, 8),
-        (rect.width, 0),
-    ])
-    
-    # 메인 화면의 적 위치에 투명도가 적용된 Surface를 출력
-    surf.blit(enemy_surf, (rect.x, rect.y))
+    temp_img = base_image.copy()
+    temp_img.set_alpha(alpha)
+    surf.blit(temp_img, (rect.x, rect.y))
 
 def spawn_enemy(existing_enemies, player_rect):
     for _ in range(50):
         x = random.randint(0, WIDTH - ENEMY_W)
-        y = random.randint(40, 300 - ENEMY_H) 
+        #y좌표 생성위치 
+        y = random.randint(40, 100 - ENEMY_H) 
         new_rect = pygame.Rect(x, y, ENEMY_W, ENEMY_H)
         if new_rect.colliderect(player_rect.inflate(100, 100)): continue
         overlap = False
@@ -120,17 +112,17 @@ def main():
         if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.top > 0: player.y -= 6
         if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.bottom < HEIGHT: player.y += 6
 
-        # 핵심 수정 1: 아이템 등장 주기 20초(1200 프레임)로 변경
+        # 아이템 등장 (20초 = 1200프레임)
         item_spawn_timer += 1
-        if item_spawn_timer >= 1200: 
+        if item_spawn_timer >= 1000: 
             item_spawn_timer = 0
             ix = random.randint(50, WIDTH - 50)
             iy = -ITEM_H
             items.append({"rect": pygame.Rect(ix, iy, ITEM_W, ITEM_H), "float_y": float(iy)})
 
-        # 핵심 수정 2: 아이템 하강 속도 상향 (1.2 -> 2.5)
+        # 수정 2: 아이템 하강 속도 3.5로 조절
         for it in items[:]:
-            it["float_y"] += 2.5
+            it["float_y"] += 3.5
             it["rect"].y = int(it["float_y"])
             if player.colliderect(it["rect"]):
                 push_mode_timer = 420 
@@ -156,7 +148,7 @@ def main():
             new_en = spawn_enemy(enemies, player)
             if new_en: enemies.append(new_en)
 
-        # 핵심 수정 3: 밀쳐지는 거리 및 속도 강화
+        # 수정 3: 밀치기 속도 및 적 기본 하강 속도 조절
         for en in enemies[:]:
             en["timer"] += 1
             if en["timer"] > ENEMY_LIFETIME:
@@ -164,10 +156,10 @@ def main():
                 continue
             
             if en["knockback"] > 0:
-                en["float_y"] -= 1.5 # 밀려나는 속도 강화 (기존 1.0)
+                en["float_y"] -= 2.5  # 밀치기(튕겨내기) 속도를 -2.5로 상향
                 en["knockback"] -= 1
             else:
-                en["float_y"] += 0.3 
+                en["float_y"] += 4.3  # 기본 하강 속도를 기존 0.3 + 4.0 = 4.3으로 상향
             en["rect"].y = int(en["float_y"])
 
         # 충돌 판정 (총알 vs 적)
@@ -180,7 +172,7 @@ def main():
                         score += 10
                     else: 
                         en["push_count"] += 1
-                        en["knockback"] = 25 # 밀려나는 프레임 강화 (기존 15)
+                        en["knockback"] = 25 
                         score += 10
                         if en["push_count"] >= 3:
                             enemies.remove(en)
@@ -191,7 +183,7 @@ def main():
             if en1["knockback"] > 0:
                 for j, en2 in enumerate(enemies):
                     if i != j and en1["rect"].colliderect(en2["rect"]) and en2["knockback"] == 0:
-                        en2["knockback"] = 25 # 연쇄 밀치기도 강화
+                        en2["knockback"] = 25 
                         en2["push_count"] += 1
                         score += 20 
                         score_popups.append({"text": "+20", "x": en2["rect"].x, "y": en2["rect"].y, "life": 30})
@@ -212,16 +204,21 @@ def main():
                         return
                     break
 
-        # 그리기
+        # --- 그리기 영역 ---
         for s in stars: pygame.draw.circle(screen, WHITE, (s[0], s[1]), s[2])
+        
         for it in items:
-            pygame.draw.rect(screen, GREEN, it["rect"])
-            pygame.draw.rect(screen, WHITE, it["rect"].inflate(-12, -12))
+            screen.blit(item_img, (it["rect"].x, it["rect"].y))
+            
         for b in bullets:
             pygame.draw.rect(screen, GREEN if b["type"]=="push" else YELLOW, b["rect"])
+            
         for en in enemies:
-            draw_enemy(screen, en["rect"], en["push_count"])
-        if (invincible // 10) % 2 == 0: draw_player(screen, player)
+            draw_enemy_sprite(screen, en["rect"], en["push_count"], enemy_img)
+            
+        if (invincible // 10) % 2 == 0: 
+            screen.blit(player_img, (player.x, player.y))
+        # -------------------
         
         # HUD
         screen.blit(font.render(f"Score: {score}", True, WHITE), (10, 10))
