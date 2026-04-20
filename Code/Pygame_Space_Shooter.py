@@ -6,9 +6,7 @@ import os
 pygame.init()
 pygame.mixer.init()
 
-# --- 절대 경로 설정 ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# --------------------------------------------------
 
 def get_korean_font(size):
     candidates = ["malgungothic", "applegothic", "nanumgothic", "notosanscjk"]
@@ -30,7 +28,11 @@ YELLOW  = (240, 220, 0)
 GREEN   = (50,  220, 80)
 ORANGE  = (240, 140, 0)
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+# 수정 1: 창 크기 조절(최대화 버튼 활성화) 옵션 추가
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
+# 수정 2: 게임 그래픽을 그릴 800x600 고정 크기의 가상 도화지 생성
+game_surface = pygame.Surface((WIDTH, HEIGHT))
+
 pygame.display.set_caption("Space Shooter - Enhanced Push Mode")
 clock = pygame.time.Clock()
 font = get_korean_font(30)
@@ -38,16 +40,12 @@ font_big = get_korean_font(72)
 font_small = get_korean_font(24)
 
 PLAYER_W, PLAYER_H = 40, 40
-
-# 수정 3: 적 크기 살짝 크게 (36 -> 48)
 ENEMY_W,  ENEMY_H  = 48, 48  
-# 수정 4: 총알 크기 살짝 크게 (6x14 -> 8x20)
 BULLET_W, BULLET_H = 8,  20  
-
 ITEM_W,   ITEM_H   = 30, 30
 
 SPAWN_RATE = 30 
-ENEMY_LIFETIME = 600 # 10초
+ENEMY_LIFETIME = 600
 
 # --- 스프라이트 및 사운드 로드 ---
 try:
@@ -93,20 +91,26 @@ def spawn_enemy(existing_enemies, player_rect):
             return {"rect": new_rect, "float_y": float(y), "timer": 0, "push_count": 0, "knockback": 0}
     return None
 
+def render_to_screen():
+    # 창 크기가 변해도 화면에 꽉 차게 늘려주는 렌더링 함수
+    window_size = screen.get_size()
+    scaled_surface = pygame.transform.scale(game_surface, window_size)
+    screen.blit(scaled_surface, (0, 0))
+    pygame.display.flip()
+
 def main():
     stars = [(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 2)) for _ in range(80)]
 
-    # 수정 5: 시작 3초 타이머 로직 추가
     for i in range(3, 0, -1):
-        screen.fill(GRAY)
-        for s in stars: pygame.draw.circle(screen, WHITE, (s[0], s[1]), s[2]) # 배경 별 그리기
+        # screen 대신 game_surface에 그림
+        game_surface.fill(GRAY)
+        for s in stars: pygame.draw.circle(game_surface, WHITE, (s[0], s[1]), s[2])
         
         count_text = font_big.render(str(i), True, YELLOW)
-        # 화면 정중앙에 텍스트 배치
-        screen.blit(count_text, (WIDTH//2 - count_text.get_width()//2, HEIGHT//2 - count_text.get_height()//2))
-        pygame.display.flip()
+        game_surface.blit(count_text, (WIDTH//2 - count_text.get_width()//2, HEIGHT//2 - count_text.get_height()//2))
         
-        # 1초 대기 (대기 중에도 창을 닫을 수 있게 이벤트 처리)
+        render_to_screen()
+        
         start_ticks = pygame.time.get_ticks()
         while pygame.time.get_ticks() - start_ticks < 1000:
             for e in pygame.event.get():
@@ -114,15 +118,13 @@ def main():
                     pygame.quit(); sys.exit()
             clock.tick(60)
 
-    # START 글자 표시
-    screen.fill(GRAY)
-    for s in stars: pygame.draw.circle(screen, WHITE, (s[0], s[1]), s[2])
+    game_surface.fill(GRAY)
+    for s in stars: pygame.draw.circle(game_surface, WHITE, (s[0], s[1]), s[2])
     start_text = font_big.render("START!", True, GREEN)
-    screen.blit(start_text, (WIDTH//2 - start_text.get_width()//2, HEIGHT//2 - start_text.get_height()//2))
-    pygame.display.flip()
-    pygame.time.delay(500) # 0.5초 대기
+    game_surface.blit(start_text, (WIDTH//2 - start_text.get_width()//2, HEIGHT//2 - start_text.get_height()//2))
+    render_to_screen()
+    pygame.time.delay(500) 
 
-    # 배경음악 재생 시작
     pygame.mixer.music.play(-1)
     
     player = pygame.Rect(WIDTH // 2 - PLAYER_W // 2, HEIGHT - 70, PLAYER_W, PLAYER_H)
@@ -139,12 +141,11 @@ def main():
     push_mode_timer = 0
     score_popups = [] 
 
-    # 수정 2: 우주선 기울기 관련 변수
     tilt_angle = 0  
 
     while True:
         clock.tick(FPS)
-        screen.fill(GRAY)
+        game_surface.fill(GRAY) # 메인 게임 화면도 game_surface 초기화
 
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
@@ -152,19 +153,17 @@ def main():
 
         keys = pygame.key.get_pressed()
         
-        # 수정 2: 키 입력에 따른 목표 기울기 각도 설정
         target_angle = 0
         if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and player.left > 0: 
             player.x -= 6
-            target_angle = 15  # 왼쪽으로 이동 시 좌측으로 15도 기울어짐
+            target_angle = 15  
         if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player.right < WIDTH: 
             player.x += 6
-            target_angle = -15 # 오른쪽으로 이동 시 우측으로 15도 기울어짐
+            target_angle = -15 
             
         if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.top > 0: player.y -= 6
         if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.bottom < HEIGHT: player.y += 6
 
-        # 부드러운 기울기 애니메이션 적용 (현재 각도에서 목표 각도로 서서히 이동)
         tilt_angle += (target_angle - tilt_angle) * 0.15
 
         item_spawn_timer += 1
@@ -189,7 +188,6 @@ def main():
         if keys[pygame.K_SPACE] and shoot_cd <= 0:
             shoot_sound.play() 
             b_type = "push" if push_mode_timer > 0 else "normal"
-            # 수정 4: 변경된 총알 크기를 반영하여 Rect 생성
             bullets.append({"rect": pygame.Rect(player.centerx - BULLET_W//2, player.top, BULLET_W, BULLET_H), "type": b_type})
             shoot_cd = 15
 
@@ -216,7 +214,6 @@ def main():
                 en["float_y"] += 4.3 
             en["rect"].y = int(en["float_y"])
 
-        # 충돌 판정 (총알 vs 적)
         for b in bullets[:]:
             for en in enemies[:]:
                 if b["rect"].colliderect(en["rect"]):
@@ -232,7 +229,6 @@ def main():
                             enemies.remove(en)
                     break
 
-        # 연쇄 충돌 판정
         for i, en1 in enumerate(enemies):
             if en1["knockback"] > 0:
                 for j, en2 in enumerate(enemies):
@@ -245,7 +241,6 @@ def main():
                             if en2 in enemies: enemies.remove(en2)
                         break
 
-        # 플레이어 피격 및 게임 오버 처리
         if invincible > 0: invincible -= 1
         else:
             for en in enemies:
@@ -259,48 +254,45 @@ def main():
                         return
                     break
 
-        # --- 그리기 영역 ---
-        for s in stars: pygame.draw.circle(screen, WHITE, (s[0], s[1]), s[2])
+        # --- 그리기 영역 (screen 대신 game_surface에 그림) ---
+        for s in stars: pygame.draw.circle(game_surface, WHITE, (s[0], s[1]), s[2])
         
         for it in items:
-            screen.blit(item_img, (it["rect"].x, it["rect"].y))
+            game_surface.blit(item_img, (it["rect"].x, it["rect"].y))
             
         for b in bullets:
-            pygame.draw.rect(screen, GREEN if b["type"]=="push" else YELLOW, b["rect"])
+            pygame.draw.rect(game_surface, GREEN if b["type"]=="push" else YELLOW, b["rect"])
             
         for en in enemies:
-            draw_enemy_sprite(screen, en["rect"], en["push_count"], enemy_img)
+            draw_enemy_sprite(game_surface, en["rect"], en["push_count"], enemy_img)
             
-        # 수정 2: 기울어진 우주선 그리기
         if (invincible // 10) % 2 == 0: 
-            # 1. 이미지를 기울기 각도(tilt_angle)만큼 회전
             rotated_player = pygame.transform.rotate(player_img, tilt_angle)
-            # 2. 회전으로 인해 이미지 크기가 변할 수 있으므로, 중심점을 기존 player 좌표의 중심으로 맞춰줍니다.
             new_player_rect = rotated_player.get_rect(center=player.center)
-            # 3. 계산된 새로운 위치에 그리기
-            screen.blit(rotated_player, new_player_rect.topleft)
-        # -------------------
-        
+            game_surface.blit(rotated_player, new_player_rect.topleft)
+            
         # HUD
-        screen.blit(font.render(f"Score: {score}", True, WHITE), (10, 10))
-        screen.blit(font.render(f"Lives: {'♥ ' * lives}", True, RED), (WIDTH - 180, 10))
+        game_surface.blit(font.render(f"Score: {score}", True, WHITE), (10, 10))
+        game_surface.blit(font.render(f"Lives: {'♥ ' * lives}", True, RED), (WIDTH - 180, 10))
         if push_mode_timer > 0:
             msg = font.render(f"PUSH MODE: {push_mode_timer//60 + 1}s", True, GREEN)
-            screen.blit(msg, (WIDTH//2 - 70, 10))
+            game_surface.blit(msg, (WIDTH//2 - 70, 10))
             
         for p in score_popups[:]:
-            screen.blit(font_small.render(p["text"], True, YELLOW), (p["x"], p["y"]))
+            game_surface.blit(font_small.render(p["text"], True, YELLOW), (p["x"], p["y"]))
             p["y"] -= 1; p["life"] -= 1
             if p["life"] <= 0: score_popups.remove(p)
 
-        pygame.display.flip()
+        # 다 그린 도화지를 창 크기에 맞게 렌더링
+        render_to_screen()
 
 def game_over_screen(score):
-    screen.fill((10, 10, 30))
-    screen.blit(font_big.render("GAME OVER", True, RED), (220, 220))
-    screen.blit(font.render(f"Final Score: {score}", True, WHITE), (330, 310))
-    screen.blit(font.render("Press R to Restart or Q to Quit", True, WHITE), (230, 370))
-    pygame.display.flip()
+    game_surface.fill((10, 10, 30))
+    game_surface.blit(font_big.render("GAME OVER", True, RED), (220, 220))
+    game_surface.blit(font.render(f"Final Score: {score}", True, WHITE), (330, 310))
+    game_surface.blit(font.render("Press R to Restart or Q to Quit", True, WHITE), (230, 370))
+    render_to_screen()
+    
     while True:
         for e in pygame.event.get():
             if e.type == pygame.QUIT: pygame.quit(); sys.exit()
