@@ -4,6 +4,11 @@ import sys
 import os
 
 pygame.init()
+pygame.mixer.init()
+
+# --- 절대 경로 설정 ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# --------------------------------------------------
 
 def get_korean_font(size):
     candidates = ["malgungothic", "applegothic", "nanumgothic", "notosanscjk"]
@@ -33,33 +38,41 @@ font_big = get_korean_font(72)
 font_small = get_korean_font(24)
 
 PLAYER_W, PLAYER_H = 40, 40
-ENEMY_W,  ENEMY_H  = 36, 36
-BULLET_W, BULLET_H = 6,  14
+
+# 수정 3: 적 크기 살짝 크게 (36 -> 48)
+ENEMY_W,  ENEMY_H  = 48, 48  
+# 수정 4: 총알 크기 살짝 크게 (6x14 -> 8x20)
+BULLET_W, BULLET_H = 8,  20  
+
 ITEM_W,   ITEM_H   = 30, 30
 
-# 수정 1: 적 생성 주기를 5초(300프레임)로 변경
 SPAWN_RATE = 30 
 ENEMY_LIFETIME = 600 # 10초
 
-# --- 스프라이트 이미지 로드 및 크기 조절 ---
+# --- 스프라이트 및 사운드 로드 ---
 try:
-    player_img = pygame.image.load(os.path.join("sprite", "Spaceship.png")).convert_alpha()
+    player_img = pygame.image.load(os.path.join(BASE_DIR, "sprite", "Spaceship.png")).convert_alpha()
     player_img = pygame.transform.scale(player_img, (PLAYER_W, PLAYER_H))
 
-    enemy_img = pygame.image.load(os.path.join("sprite", "Enemy.png")).convert_alpha()
+    enemy_img = pygame.image.load(os.path.join(BASE_DIR, "sprite", "Enemy.png")).convert_alpha()
     enemy_img = pygame.transform.scale(enemy_img, (ENEMY_W, ENEMY_H))
 
-    item_img = pygame.image.load(os.path.join("sprite", "Force_icon.png")).convert_alpha()
+    item_img = pygame.image.load(os.path.join(BASE_DIR, "sprite", "Force_icon.png")).convert_alpha()
     item_img = pygame.transform.scale(item_img, (ITEM_W, ITEM_H))
+    
+    shoot_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "sound", "Shoot.wav"))
+    shoot_sound.set_volume(0.3)
+    
+    pygame.mixer.music.load(os.path.join(BASE_DIR, "sound", "Background.MP3"))
+    pygame.mixer.music.set_volume(0.5) 
+    
 except Exception as e:
-    print(f"스프라이트 로드 오류: {e}")
-    print("코드 파일과 같은 위치에 'sprite' 폴더를 만들고, Spaceship.png, Enemy.png, Force_icon.png를 넣어주세요.")
+    print(f"파일 로드 오류: {e}")
     pygame.quit()
     sys.exit()
 # ------------------------------------------
 
 def draw_enemy_sprite(surf, rect, push_count, base_image):
-    # 맞은 횟수에 따라 투명도 감소
     alpha = max(40, 255 - (push_count * 80)) 
     temp_img = base_image.copy()
     temp_img.set_alpha(alpha)
@@ -68,7 +81,6 @@ def draw_enemy_sprite(surf, rect, push_count, base_image):
 def spawn_enemy(existing_enemies, player_rect):
     for _ in range(50):
         x = random.randint(0, WIDTH - ENEMY_W)
-        #y좌표 생성위치 
         y = random.randint(40, 100 - ENEMY_H) 
         new_rect = pygame.Rect(x, y, ENEMY_W, ENEMY_H)
         if new_rect.colliderect(player_rect.inflate(100, 100)): continue
@@ -82,6 +94,37 @@ def spawn_enemy(existing_enemies, player_rect):
     return None
 
 def main():
+    stars = [(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 2)) for _ in range(80)]
+
+    # 수정 5: 시작 3초 타이머 로직 추가
+    for i in range(3, 0, -1):
+        screen.fill(GRAY)
+        for s in stars: pygame.draw.circle(screen, WHITE, (s[0], s[1]), s[2]) # 배경 별 그리기
+        
+        count_text = font_big.render(str(i), True, YELLOW)
+        # 화면 정중앙에 텍스트 배치
+        screen.blit(count_text, (WIDTH//2 - count_text.get_width()//2, HEIGHT//2 - count_text.get_height()//2))
+        pygame.display.flip()
+        
+        # 1초 대기 (대기 중에도 창을 닫을 수 있게 이벤트 처리)
+        start_ticks = pygame.time.get_ticks()
+        while pygame.time.get_ticks() - start_ticks < 1000:
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
+                    pygame.quit(); sys.exit()
+            clock.tick(60)
+
+    # START 글자 표시
+    screen.fill(GRAY)
+    for s in stars: pygame.draw.circle(screen, WHITE, (s[0], s[1]), s[2])
+    start_text = font_big.render("START!", True, GREEN)
+    screen.blit(start_text, (WIDTH//2 - start_text.get_width()//2, HEIGHT//2 - start_text.get_height()//2))
+    pygame.display.flip()
+    pygame.time.delay(500) # 0.5초 대기
+
+    # 배경음악 재생 시작
+    pygame.mixer.music.play(-1)
+    
     player = pygame.Rect(WIDTH // 2 - PLAYER_W // 2, HEIGHT - 70, PLAYER_W, PLAYER_H)
     bullets = []
     enemies = []
@@ -96,7 +139,8 @@ def main():
     push_mode_timer = 0
     score_popups = [] 
 
-    stars = [(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 2)) for _ in range(80)]
+    # 수정 2: 우주선 기울기 관련 변수
+    tilt_angle = 0  
 
     while True:
         clock.tick(FPS)
@@ -107,12 +151,22 @@ def main():
                 pygame.quit(); sys.exit()
 
         keys = pygame.key.get_pressed()
-        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and player.left > 0: player.x -= 6
-        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player.right < WIDTH: player.x += 6
+        
+        # 수정 2: 키 입력에 따른 목표 기울기 각도 설정
+        target_angle = 0
+        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and player.left > 0: 
+            player.x -= 6
+            target_angle = 15  # 왼쪽으로 이동 시 좌측으로 15도 기울어짐
+        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player.right < WIDTH: 
+            player.x += 6
+            target_angle = -15 # 오른쪽으로 이동 시 우측으로 15도 기울어짐
+            
         if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.top > 0: player.y -= 6
         if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.bottom < HEIGHT: player.y += 6
 
-        # 아이템 등장 (20초 = 1200프레임)
+        # 부드러운 기울기 애니메이션 적용 (현재 각도에서 목표 각도로 서서히 이동)
+        tilt_angle += (target_angle - tilt_angle) * 0.15
+
         item_spawn_timer += 1
         if item_spawn_timer >= 1000: 
             item_spawn_timer = 0
@@ -120,7 +174,6 @@ def main():
             iy = -ITEM_H
             items.append({"rect": pygame.Rect(ix, iy, ITEM_W, ITEM_H), "float_y": float(iy)})
 
-        # 수정 2: 아이템 하강 속도 3.5로 조절
         for it in items[:]:
             it["float_y"] += 3.5
             it["rect"].y = int(it["float_y"])
@@ -134,8 +187,10 @@ def main():
 
         shoot_cd -= 1
         if keys[pygame.K_SPACE] and shoot_cd <= 0:
+            shoot_sound.play() 
             b_type = "push" if push_mode_timer > 0 else "normal"
-            bullets.append({"rect": pygame.Rect(player.centerx - 3, player.top, 6, 14), "type": b_type})
+            # 수정 4: 변경된 총알 크기를 반영하여 Rect 생성
+            bullets.append({"rect": pygame.Rect(player.centerx - BULLET_W//2, player.top, BULLET_W, BULLET_H), "type": b_type})
             shoot_cd = 15
 
         for b in bullets[:]:
@@ -148,7 +203,6 @@ def main():
             new_en = spawn_enemy(enemies, player)
             if new_en: enemies.append(new_en)
 
-        # 수정 3: 밀치기 속도 및 적 기본 하강 속도 조절
         for en in enemies[:]:
             en["timer"] += 1
             if en["timer"] > ENEMY_LIFETIME:
@@ -156,10 +210,10 @@ def main():
                 continue
             
             if en["knockback"] > 0:
-                en["float_y"] -= 2.5  # 밀치기(튕겨내기) 속도를 -2.5로 상향
+                en["float_y"] -= 2.5
                 en["knockback"] -= 1
             else:
-                en["float_y"] += 4.3  # 기본 하강 속도를 기존 0.3 + 4.0 = 4.3으로 상향
+                en["float_y"] += 4.3 
             en["rect"].y = int(en["float_y"])
 
         # 충돌 판정 (총알 vs 적)
@@ -191,7 +245,7 @@ def main():
                             if en2 in enemies: enemies.remove(en2)
                         break
 
-        # 플레이어 피격
+        # 플레이어 피격 및 게임 오버 처리
         if invincible > 0: invincible -= 1
         else:
             for en in enemies:
@@ -200,7 +254,8 @@ def main():
                     invincible = 90
                     enemies.clear()
                     if lives <= 0:
-                        if game_over_screen(score): main()
+                        pygame.mixer.music.stop() 
+                        if game_over_screen(score): main() 
                         return
                     break
 
@@ -216,8 +271,14 @@ def main():
         for en in enemies:
             draw_enemy_sprite(screen, en["rect"], en["push_count"], enemy_img)
             
+        # 수정 2: 기울어진 우주선 그리기
         if (invincible // 10) % 2 == 0: 
-            screen.blit(player_img, (player.x, player.y))
+            # 1. 이미지를 기울기 각도(tilt_angle)만큼 회전
+            rotated_player = pygame.transform.rotate(player_img, tilt_angle)
+            # 2. 회전으로 인해 이미지 크기가 변할 수 있으므로, 중심점을 기존 player 좌표의 중심으로 맞춰줍니다.
+            new_player_rect = rotated_player.get_rect(center=player.center)
+            # 3. 계산된 새로운 위치에 그리기
+            screen.blit(rotated_player, new_player_rect.topleft)
         # -------------------
         
         # HUD
