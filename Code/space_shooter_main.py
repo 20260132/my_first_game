@@ -2,6 +2,7 @@ import pygame
 import random
 import sys
 import os
+import math
 
 pygame.init()
 pygame.mixer.init()
@@ -16,6 +17,14 @@ def get_korean_font(size):
             return font
     return pygame.font.SysFont(None, size)
 
+def get_title_font(size):
+    candidates = ["impact", "arialblack", "segoeui", "malgungothic"]
+    for name in candidates:
+        font = pygame.font.SysFont(name, size)
+        if font.get_ascent() > 0:
+            return font
+    return get_korean_font(size)
+
 WIDTH, HEIGHT = 800, 600
 FPS = 60
 
@@ -28,21 +37,25 @@ YELLOW  = (240, 220, 0)
 GREEN   = (50,  220, 80)
 ORANGE  = (240, 140, 0)
 
-# 수정 1: 창 크기 조절(최대화 버튼 활성화) 옵션 추가
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
-# 수정 2: 게임 그래픽을 그릴 800x600 고정 크기의 가상 도화지 생성
 game_surface = pygame.Surface((WIDTH, HEIGHT))
 
-pygame.display.set_caption("Space Shooter - Enhanced Push Mode")
+pygame.display.set_caption("NOVA BLASTER")
 clock = pygame.time.Clock()
+
 font = get_korean_font(30)
 font_big = get_korean_font(72)
 font_small = get_korean_font(24)
+font_warning = get_korean_font(50) 
+font_gameover = get_title_font(100)
+# --- 수정: 점수용 두꺼운 폰트 추가 ---
+font_thick_score = get_title_font(50) 
 
 PLAYER_W, PLAYER_H = 40, 40
 ENEMY_W,  ENEMY_H  = 48, 48  
 BULLET_W, BULLET_H = 8,  20  
 ITEM_W,   ITEM_H   = 30, 30
+BLACKHOLE_W, BLACKHOLE_H = 200, 200 
 
 SPAWN_RATE = 30 
 ENEMY_LIFETIME = 600
@@ -58,8 +71,17 @@ try:
     item_img = pygame.image.load(os.path.join(BASE_DIR, "sprite", "Force_icon.png")).convert_alpha()
     item_img = pygame.transform.scale(item_img, (ITEM_W, ITEM_H))
     
+    blackhole_img = pygame.image.load(os.path.join(BASE_DIR, "sprite", "Blackhole.png")).convert_alpha()
+    blackhole_img = pygame.transform.scale(blackhole_img, (BLACKHOLE_W, BLACKHOLE_H))
+    
     shoot_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "sound", "Shoot.wav"))
     shoot_sound.set_volume(0.3)
+    
+    bh_warning_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "sound", "Blackhole_enter.wav"))
+    bh_warning_sound.set_volume(0.1)
+
+    countdown_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "sound", "Countdown.wav"))
+    countdown_sound.set_volume(0.5)
     
     pygame.mixer.music.load(os.path.join(BASE_DIR, "sound", "Background.MP3"))
     pygame.mixer.music.set_volume(0.5) 
@@ -68,13 +90,15 @@ except Exception as e:
     print(f"파일 로드 오류: {e}")
     pygame.quit()
     sys.exit()
-# ------------------------------------------
 
-def draw_enemy_sprite(surf, rect, push_count, base_image):
+def draw_enemy_sprite(surf, rect, push_count, base_image, angle=0):
     alpha = max(40, 255 - (push_count * 80)) 
     temp_img = base_image.copy()
+    if angle != 0:
+        temp_img = pygame.transform.rotate(temp_img, angle)
     temp_img.set_alpha(alpha)
-    surf.blit(temp_img, (rect.x, rect.y))
+    new_rect = temp_img.get_rect(center=rect.center)
+    surf.blit(temp_img, new_rect.topleft)
 
 def spawn_enemy(existing_enemies, player_rect):
     for _ in range(50):
@@ -88,11 +112,10 @@ def spawn_enemy(existing_enemies, player_rect):
                 overlap = True
                 break
         if not overlap:
-            return {"rect": new_rect, "float_y": float(y), "timer": 0, "push_count": 0, "knockback": 0}
+            return {"rect": new_rect, "float_y": float(y), "timer": 0, "push_count": 0, "knockback": 0, "bh_angle": 0}
     return None
 
 def render_to_screen():
-    # 창 크기가 변해도 화면에 꽉 차게 늘려주는 렌더링 함수
     window_size = screen.get_size()
     scaled_surface = pygame.transform.scale(game_surface, window_size)
     screen.blit(scaled_surface, (0, 0))
@@ -101,14 +124,13 @@ def render_to_screen():
 def main():
     stars = [(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 2)) for _ in range(80)]
 
+    countdown_sound.play() 
+
     for i in range(3, 0, -1):
-        # screen 대신 game_surface에 그림
         game_surface.fill(GRAY)
         for s in stars: pygame.draw.circle(game_surface, WHITE, (s[0], s[1]), s[2])
-        
         count_text = font_big.render(str(i), True, YELLOW)
         game_surface.blit(count_text, (WIDTH//2 - count_text.get_width()//2, HEIGHT//2 - count_text.get_height()//2))
-        
         render_to_screen()
         
         start_ticks = pygame.time.get_ticks()
@@ -138,21 +160,25 @@ def main():
     invincible = 0
     
     item_spawn_timer = 0
+    item_spawn_interval = FPS * 10 
     push_mode_timer = 0
     score_popups = [] 
-
     tilt_angle = 0  
+
+    blackhole = None
+    blackhole_spawn_timer = 0
+    blackhole_duration = 0
+    blackhole_angle = 0
 
     while True:
         clock.tick(FPS)
-        game_surface.fill(GRAY) # 메인 게임 화면도 game_surface 초기화
+        game_surface.fill(GRAY)
 
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
 
         keys = pygame.key.get_pressed()
-        
         target_angle = 0
         if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and player.left > 0: 
             player.x -= 6
@@ -160,15 +186,15 @@ def main():
         if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and player.right < WIDTH: 
             player.x += 6
             target_angle = -15 
-            
         if (keys[pygame.K_UP] or keys[pygame.K_w]) and player.top > 0: player.y -= 6
         if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and player.bottom < HEIGHT: player.y += 6
 
         tilt_angle += (target_angle - tilt_angle) * 0.15
 
         item_spawn_timer += 1
-        if item_spawn_timer >= 1000: 
+        if item_spawn_timer >= item_spawn_interval: 
             item_spawn_timer = 0
+            item_spawn_interval = FPS * 20 
             ix = random.randint(50, WIDTH - 50)
             iy = -ITEM_H
             items.append({"rect": pygame.Rect(ix, iy, ITEM_W, ITEM_H), "float_y": float(iy)})
@@ -195,6 +221,61 @@ def main():
             b["rect"].y -= 10
             if b["rect"].bottom < 0: bullets.remove(b)
 
+        if blackhole is None:
+            blackhole_spawn_timer += 1
+            if blackhole_spawn_timer == FPS * 13:
+                bh_warning_sound.play(loops=1)
+            if blackhole_spawn_timer >= FPS * 15:
+                blackhole_spawn_timer = 0
+                bh_x = random.randint(50, WIDTH - 50 - BLACKHOLE_W)
+                bh_y = random.randint(50, HEIGHT - 200 - BLACKHOLE_H)
+                blackhole = {
+                    "rect": pygame.Rect(bh_x, bh_y, BLACKHOLE_W, BLACKHOLE_H), 
+                    "center": (bh_x + BLACKHOLE_W//2, bh_y + BLACKHOLE_H//2)
+                }
+                blackhole_duration = FPS * 5
+
+        if blackhole:
+            blackhole_duration -= 1
+            if blackhole_duration <= 0:
+                blackhole = None 
+                for en in enemies: en["bh_angle"] = 0 
+            else:
+                blackhole_angle = (blackhole_angle + 4) % 360
+                event_horizon = blackhole["rect"].inflate(-100, -100) 
+                
+                # 플레이어 끌어당기기 (회전은 제거됨)
+                dx = blackhole["center"][0] - player.centerx
+                dy = blackhole["center"][1] - player.centery
+                dist = math.hypot(dx, dy)
+                if dist > 0:
+                    player.x += int((dx / dist) * 2.8) 
+                    player.y += int((dy / dist) * 2.8)
+                    
+                player.x = max(0, min(WIDTH - PLAYER_W, player.x))
+                player.y = max(0, min(HEIGHT - PLAYER_H, player.y))
+                if player.colliderect(event_horizon):
+                    lives = 0
+                    pygame.mixer.music.stop() 
+                    if game_over_screen(score): main() 
+                    return
+                
+                for en in enemies[:]:
+                    edx = blackhole["center"][0] - en["rect"].centerx
+                    edy = blackhole["center"][1] - en["rect"].centery
+                    edist = math.hypot(edx, edy)
+                    if edist > 0:
+                        en["rect"].x += int((edx / edist) * 3.8)
+                        en["float_y"] += (edy / edist) * 3.8
+                        en["rect"].y = int(en["float_y"])
+                        
+                        enemy_bh_rotation_speed = 25 * (1 - edist / 400)
+                        if enemy_bh_rotation_speed < 0: enemy_bh_rotation_speed = 0
+                        en["bh_angle"] = (en["bh_angle"] + enemy_bh_rotation_speed) % 360
+                        
+                    if en["rect"].colliderect(event_horizon):
+                        if en in enemies: enemies.remove(en)
+
         spawn_timer += 1
         if spawn_timer >= SPAWN_RATE:
             spawn_timer = 0
@@ -206,7 +287,6 @@ def main():
             if en["timer"] > ENEMY_LIFETIME:
                 enemies.remove(en)
                 continue
-            
             if en["knockback"] > 0:
                 en["float_y"] -= 2.5
                 en["knockback"] -= 1
@@ -254,43 +334,68 @@ def main():
                         return
                     break
 
-        # --- 그리기 영역 (screen 대신 game_surface에 그림) ---
         for s in stars: pygame.draw.circle(game_surface, WHITE, (s[0], s[1]), s[2])
-        
+        if blackhole:
+            rotated_bh = pygame.transform.rotate(blackhole_img, blackhole_angle)
+            bh_rect = rotated_bh.get_rect(center=blackhole["center"])
+            game_surface.blit(rotated_bh, bh_rect.topleft)
         for it in items:
             game_surface.blit(item_img, (it["rect"].x, it["rect"].y))
-            
         for b in bullets:
             pygame.draw.rect(game_surface, GREEN if b["type"]=="push" else YELLOW, b["rect"])
             
         for en in enemies:
-            draw_enemy_sprite(game_surface, en["rect"], en["push_count"], enemy_img)
-            
+            if blackhole and math.hypot(blackhole["center"][0] - en["rect"].centerx, blackhole["center"][1] - en["rect"].centery) < 400: 
+                 draw_enemy_sprite(game_surface, en["rect"], en["push_count"], enemy_img, en["bh_angle"])
+            else:
+                 draw_enemy_sprite(game_surface, en["rect"], en["push_count"], enemy_img)
+                 
         if (invincible // 10) % 2 == 0: 
+            # --- 수정: 플레이어는 이제 블랙홀 회전 없이 기본 기울기(tilt_angle)만 적용됩니다 ---
             rotated_player = pygame.transform.rotate(player_img, tilt_angle)
             new_player_rect = rotated_player.get_rect(center=player.center)
             game_surface.blit(rotated_player, new_player_rect.topleft)
             
-        # HUD
         game_surface.blit(font.render(f"Score: {score}", True, WHITE), (10, 10))
         game_surface.blit(font.render(f"Lives: {'♥ ' * lives}", True, RED), (WIDTH - 180, 10))
         if push_mode_timer > 0:
             msg = font.render(f"PUSH MODE: {push_mode_timer//60 + 1}s", True, GREEN)
             game_surface.blit(msg, (WIDTH//2 - 70, 10))
-            
         for p in score_popups[:]:
             game_surface.blit(font_small.render(p["text"], True, YELLOW), (p["x"], p["y"]))
             p["y"] -= 1; p["life"] -= 1
             if p["life"] <= 0: score_popups.remove(p)
-
-        # 다 그린 도화지를 창 크기에 맞게 렌더링
+        if blackhole is None and FPS * 13 <= blackhole_spawn_timer < FPS * 15:
+            if (blackhole_spawn_timer // 10) % 2 == 0:
+                warning_text = font_warning.render("블랙홀이 등장합니다!", True, RED)
+                text_rect = warning_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+                game_surface.blit(warning_text, text_rect.topleft)
         render_to_screen()
 
+# --- 수정: 게임 오버 화면 디자인 업데이트 ---
 def game_over_screen(score):
     game_surface.fill((10, 10, 30))
-    game_surface.blit(font_big.render("GAME OVER", True, RED), (220, 220))
-    game_surface.blit(font.render(f"Final Score: {score}", True, WHITE), (330, 310))
-    game_surface.blit(font.render("Press R to Restart or Q to Quit", True, WHITE), (230, 370))
+    
+    go_text = font_gameover.render("GAME OVER", True, RED)
+    go_shadow = font_gameover.render("GAME OVER", True, BLACK)
+    go_rect = go_text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
+    
+    game_surface.blit(go_shadow, (go_rect.x + 5, go_rect.y + 5))
+    game_surface.blit(go_text, go_rect)
+    
+    # 두껍고 빨간색으로 변경된 Final Score (그림자 효과 포함)
+    score_text = font_thick_score.render(f"Final Score: {score}", True, RED)
+    score_shadow = font_thick_score.render(f"Final Score: {score}", True, BLACK)
+    score_rect = score_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 20))
+    
+    game_surface.blit(score_shadow, (score_rect.x + 3, score_rect.y + 3))
+    game_surface.blit(score_text, score_rect)
+    
+    # 안내 텍스트
+    guide_text = font.render("Press R to Restart or Q to Quit", True, WHITE)
+    guide_rect = guide_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 100))
+    game_surface.blit(guide_text, guide_rect)
+    
     render_to_screen()
     
     while True:
