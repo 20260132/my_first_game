@@ -4,6 +4,16 @@ import sys
 import os
 import math
 
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        base = sys._MEIPASS
+    else:
+        # 오타 수정: __file___ -> __file__
+        base = os.path.dirname(__file__)
+    return os.path.join(base, relative_path)
+
+
 pygame.init()
 pygame.mixer.init()
 
@@ -60,30 +70,30 @@ BLACKHOLE_W, BLACKHOLE_H = 200, 200
 SPAWN_RATE = 30 
 ENEMY_LIFETIME = 600
 
-# --- 스프라이트 및 사운드 로드 ---
+# --- 스프라이트 및 사운드 로드 (resource_path 적용) ---
 try:
-    player_img = pygame.image.load(os.path.join(BASE_DIR, "sprite", "Spaceship.png")).convert_alpha()
+    player_img = pygame.image.load(resource_path(os.path.join("sprite", "Spaceship.png"))).convert_alpha()
     player_img = pygame.transform.scale(player_img, (PLAYER_W, PLAYER_H))
 
-    enemy_img = pygame.image.load(os.path.join(BASE_DIR, "sprite", "Enemy.png")).convert_alpha()
+    enemy_img = pygame.image.load(resource_path(os.path.join("sprite", "Enemy.png"))).convert_alpha()
     enemy_img = pygame.transform.scale(enemy_img, (ENEMY_W, ENEMY_H))
 
-    item_img = pygame.image.load(os.path.join(BASE_DIR, "sprite", "Force_icon.png")).convert_alpha()
+    item_img = pygame.image.load(resource_path(os.path.join("sprite", "Force_icon.png"))).convert_alpha()
     item_img = pygame.transform.scale(item_img, (ITEM_W, ITEM_H))
     
-    blackhole_img = pygame.image.load(os.path.join(BASE_DIR, "sprite", "Blackhole.png")).convert_alpha()
+    blackhole_img = pygame.image.load(resource_path(os.path.join("sprite", "Blackhole.png"))).convert_alpha()
     blackhole_img = pygame.transform.scale(blackhole_img, (BLACKHOLE_W, BLACKHOLE_H))
     
-    shoot_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "sound", "Shoot.wav"))
+    shoot_sound = pygame.mixer.Sound(resource_path(os.path.join("sound", "Shoot.wav")))
     shoot_sound.set_volume(0.3)
     
-    bh_warning_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "sound", "Blackhole_enter.wav"))
+    bh_warning_sound = pygame.mixer.Sound(resource_path(os.path.join("sound", "Blackhole_enter.wav")))
     bh_warning_sound.set_volume(0.1)
 
-    countdown_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "sound", "Countdown.wav"))
+    countdown_sound = pygame.mixer.Sound(resource_path(os.path.join("sound", "Countdown.wav")))
     countdown_sound.set_volume(0.5)
     
-    pygame.mixer.music.load(os.path.join(BASE_DIR, "sound", "Background.MP3"))
+    pygame.mixer.music.load(resource_path(os.path.join("sound", "Background.MP3")))
     pygame.mixer.music.set_volume(0.5) 
     
 except Exception as e:
