@@ -1,10 +1,10 @@
 ('C:\\Users\\winj0\\OneDrive\\바탕 '
  '화면\\AIGame1\\my_first_game\\Code\\dist\\space_shooter_main.exe',
- True,
+ False,
  False,
  False,
  'C:\\Users\\winj0\\OneDrive\\바탕 '
- '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\PyInstaller\\bootloader\\images\\icon-console.ico',
+ '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\PyInstaller\\bootloader\\images\\icon-windowed.ico',
  None,
  False,
  False,
@@ -86,21 +86,33 @@
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\SDL2_image.dll',
    'BINARY'),
+  ('SDL2.dll',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\SDL2.dll',
+   'BINARY'),
+  ('libwebp-7.dll',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libwebp-7.dll',
+   'BINARY'),
+  ('libopusfile-0.dll',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libopusfile-0.dll',
+   'BINARY'),
   ('libjpeg-9.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libjpeg-9.dll',
-   'BINARY'),
-  ('zlib1.dll',
-   'C:\\Users\\winj0\\OneDrive\\바탕 '
-   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\zlib1.dll',
    'BINARY'),
   ('libogg-0.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libogg-0.dll',
    'BINARY'),
-  ('freetype.dll',
+  ('libpng16-16.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
-   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\freetype.dll',
+   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libpng16-16.dll',
+   'BINARY'),
+  ('zlib1.dll',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\zlib1.dll',
    'BINARY'),
   ('libmodplug-1.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
@@ -110,37 +122,25 @@
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libopus-0.dll',
    'BINARY'),
-  ('libopusfile-0.dll',
+  ('SDL2_mixer.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
-   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libopusfile-0.dll',
-   'BINARY'),
-  ('SDL2.dll',
-   'C:\\Users\\winj0\\OneDrive\\바탕 '
-   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\SDL2.dll',
+   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\SDL2_mixer.dll',
    'BINARY'),
   ('portmidi.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\portmidi.dll',
    'BINARY'),
-  ('libtiff-5.dll',
-   'C:\\Users\\winj0\\OneDrive\\바탕 '
-   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libtiff-5.dll',
-   'BINARY'),
   ('SDL2_ttf.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\SDL2_ttf.dll',
    'BINARY'),
-  ('SDL2_mixer.dll',
+  ('libtiff-5.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
-   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\SDL2_mixer.dll',
+   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libtiff-5.dll',
    'BINARY'),
-  ('libwebp-7.dll',
+  ('freetype.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
-   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libwebp-7.dll',
-   'BINARY'),
-  ('libpng16-16.dll',
-   'C:\\Users\\winj0\\OneDrive\\바탕 '
-   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libpng16-16.dll',
+   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\freetype.dll',
    'BINARY'),
   ('_lzma.pyd',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
@@ -294,6 +294,10 @@
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\base.cp310-win_amd64.pyd',
    'EXTENSION'),
+  ('api-ms-win-crt-time-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-time-l1-1-0.dll',
+   'BINARY'),
   ('api-ms-win-crt-runtime-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-crt-runtime-l1-1-0.dll',
@@ -302,13 +306,29 @@
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-crt-locale-l1-1-0.dll',
    'BINARY'),
+  ('api-ms-win-crt-convert-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-convert-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-environment-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-environment-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-string-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-string-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-filesystem-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-filesystem-l1-1-0.dll',
+   'BINARY'),
   ('api-ms-win-crt-math-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-crt-math-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-crt-stdio-l1-1-0.dll',
+  ('api-ms-win-crt-process-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-stdio-l1-1-0.dll',
+   'Toolkit\\api-ms-win-crt-process-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-crt-heap-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
@@ -322,37 +342,13 @@
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\VCRUNTIME140.dll',
    'BINARY'),
-  ('api-ms-win-crt-convert-l1-1-0.dll',
+  ('api-ms-win-crt-stdio-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-convert-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-environment-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-environment-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-process-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-process-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-time-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-time-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-string-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-string-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-filesystem-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-filesystem-l1-1-0.dll',
+   'Toolkit\\api-ms-win-crt-stdio-l1-1-0.dll',
    'BINARY'),
   ('pygame\\SDL2.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\SDL2.dll',
-   'BINARY'),
-  ('api-ms-win-crt-utility-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-utility-l1-1-0.dll',
    'BINARY'),
   ('pygame\\libopus-0.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
@@ -369,6 +365,10 @@
   ('pygame\\libjpeg-9.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\libjpeg-9.dll',
+   'BINARY'),
+  ('api-ms-win-crt-utility-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-utility-l1-1-0.dll',
    'BINARY'),
   ('libffi-7.dll',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
@@ -406,6 +406,30 @@
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\ucrtbase.dll',
    'BINARY'),
+  ('api-ms-win-core-timezone-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-timezone-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-synch-l1-2-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-synch-l1-2-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-synch-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-synch-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-profile-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-profile-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-file-l1-2-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-file-l1-2-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-file-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-file-l1-1-0.dll',
+   'BINARY'),
   ('api-ms-win-core-localization-l1-2-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-localization-l1-2-0.dll',
@@ -414,98 +438,110 @@
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-namedpipe-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-core-rtlsupport-l1-1-0.dll',
+  ('api-ms-win-core-interlocked-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-rtlsupport-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-sysinfo-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-sysinfo-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-string-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-string-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-heap-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-heap-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-synch-l1-2-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-synch-l1-2-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-debug-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-debug-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-datetime-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-datetime-l1-1-0.dll',
+   'Toolkit\\api-ms-win-core-interlocked-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-core-processenvironment-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-processenvironment-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-core-profile-l1-1-0.dll',
+  ('api-ms-win-core-datetime-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-profile-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-synch-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-synch-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-processthreads-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-processthreads-l1-1-0.dll',
+   'Toolkit\\api-ms-win-core-datetime-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-core-memory-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-memory-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-core-file-l1-2-0.dll',
+  ('api-ms-win-core-processthreads-l1-1-1.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-file-l1-2-0.dll',
+   'Toolkit\\api-ms-win-core-processthreads-l1-1-1.dll',
    'BINARY'),
-  ('api-ms-win-core-interlocked-l1-1-0.dll',
+  ('api-ms-win-core-sysinfo-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-interlocked-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-file-l2-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-file-l2-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-util-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-util-l1-1-0.dll',
+   'Toolkit\\api-ms-win-core-sysinfo-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-core-console-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-console-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-core-processthreads-l1-1-1.dll',
+  ('api-ms-win-core-handle-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-processthreads-l1-1-1.dll',
+   'Toolkit\\api-ms-win-core-handle-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-core-timezone-l1-1-0.dll',
+  ('api-ms-win-core-util-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-timezone-l1-1-0.dll',
+   'Toolkit\\api-ms-win-core-util-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-processthreads-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-processthreads-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-core-libraryloader-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-libraryloader-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-core-handle-l1-1-0.dll',
+  ('api-ms-win-core-heap-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-handle-l1-1-0.dll',
+   'Toolkit\\api-ms-win-core-heap-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-file-l2-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-file-l2-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-debug-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-debug-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-string-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-string-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-rtlsupport-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-rtlsupport-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-core-errorhandling-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-errorhandling-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-core-file-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-file-l1-1-0.dll',
-   'BINARY'),
+  ('assets\\sound\\Background.mp3',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\AIGame1\\my_first_game\\Code\\assets\\sound\\Background.mp3',
+   'DATA'),
+  ('assets\\sound\\Blackhole_enter.wav',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\AIGame1\\my_first_game\\Code\\assets\\sound\\Blackhole_enter.wav',
+   'DATA'),
+  ('assets\\sound\\Countdown.wav',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\AIGame1\\my_first_game\\Code\\assets\\sound\\Countdown.wav',
+   'DATA'),
+  ('assets\\sound\\Shoot.wav',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\AIGame1\\my_first_game\\Code\\assets\\sound\\Shoot.wav',
+   'DATA'),
+  ('assets\\sprite\\Blackhole.png',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\AIGame1\\my_first_game\\Code\\assets\\sprite\\Blackhole.png',
+   'DATA'),
+  ('assets\\sprite\\Enemy.png',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\AIGame1\\my_first_game\\Code\\assets\\sprite\\Enemy.png',
+   'DATA'),
+  ('assets\\sprite\\Force_icon.png',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\AIGame1\\my_first_game\\Code\\assets\\sprite\\Force_icon.png',
+   'DATA'),
+  ('assets\\sprite\\Spaceship.png',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\AIGame1\\my_first_game\\Code\\assets\\sprite\\Spaceship.png',
+   'DATA'),
+  ('assets\\sprite\\booster.png',
+   'C:\\Users\\winj0\\OneDrive\\바탕 '
+   '화면\\AIGame1\\my_first_game\\Code\\assets\\sprite\\booster.png',
+   'DATA'),
   ('pygame\\freesansbold.ttf',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
    '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\pygame\\freesansbold.ttf',
@@ -521,10 +557,10 @@
  [],
  False,
  False,
- 1778647954,
- [('run.exe',
+ 1778649061,
+ [('runw.exe',
    'C:\\Users\\winj0\\OneDrive\\바탕 '
-   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
+   '화면\\thonny-4.1.7-windows-portable\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')],
  'C:\\Users\\winj0\\OneDrive\\바탕 '
  '화면\\thonny-4.1.7-windows-portable\\python310.dll')

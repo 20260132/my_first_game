@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='space_shooter_main',
+    name='tlqkf',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
